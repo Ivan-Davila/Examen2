@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
+def perfil(request):
+    pass
 
 @login_required
 def nuevo_registro(request):
@@ -18,9 +20,14 @@ def nuevo_registro(request):
         password = request.POST['password']
         tipo_usuario = "distribuidor"
         
+def listar(request):
+    pass
 
+def editar(request):
+    pass
 
-
+def eliminar(request):
+    pass
 
 def registro(request):
     return render(request,'registro.html')

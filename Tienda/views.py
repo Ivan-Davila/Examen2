@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 def home(request):
-    return render(request,'home.html')
+    return render(request,'Tienda/home.html')
 
 @login_required
 def admin_panel(request):
@@ -21,7 +21,7 @@ def login_user(request):
         else:
             # Muestra un mensaje de error si los credenciales no son válidos
             return render(request, 'login.html', {'error_message': 'Datos incorrectos'})
-    return render(request,'login.html')
+    return render(request,'Tienda/login.html')
 
 def logout_user(request):
     logout(request)
