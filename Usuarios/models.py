@@ -9,7 +9,7 @@ class PerfilUsuario(models.Model):
     user=models.OneToOneField(User,on_delete=models.CASCADE)
     user_type = models.CharField(max_length=20, choices=[
         ('administrator', 'Administrator'),
-        ('distributor', 'Distributor'),
+        ('distribuidor', 'Distribuidor'),
         ('cliente', 'Cliente'),
     ])
     creditos=models.PositiveIntegerField()
