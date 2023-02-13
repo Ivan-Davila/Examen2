@@ -1,12 +1,10 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 
 
-# Create your views here.
-
-def perfil(request):
-    pass
+# Create your views here.  
 
 @login_required
 def nuevo_registro(request):
@@ -21,7 +19,8 @@ def nuevo_registro(request):
         tipo_usuario = "distribuidor"
         
 def listar(request):
-    pass
+    users = User.objects.select_related('userprofile').all()
+    return render(request,'Usuarios/listado.html')
 
 def editar(request):
     pass
@@ -30,7 +29,7 @@ def eliminar(request):
     pass
 
 def registro(request):
-    return render(request,'registro.html')
+    return render(request,'Usuarios/registro.html')
 
 @login_required
 def perfil(request):
