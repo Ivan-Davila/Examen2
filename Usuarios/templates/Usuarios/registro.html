@@ -23,73 +23,75 @@
   
 {% include 'layaout/navbar.html' %}
 <section class="h-100 h-custom">
-    <div class="container py-5 h-100">
-      <div class="row d-flex justify-content-center align-items-center h-100">
-        <div class="col-lg-8 col-xl-6">
-          <div class="card rounded-3">
-            <div class="card-body p-4 p-md-5" style="background-color:rgba(19, 36, 110, 0.719);">
-              <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar Usuario</h3>
-  
-              <form class="px-md-2">
-  
-                <div class="form-outline mb-4">
-                  <input type="text" id="form3Example1q" class="form-control" />
-                  <label class="form-label" for="form3Example1q">Name</label>
-                </div>
-  
-                <div class="row">
-                  <div class="col-md-6 mb-4">
-  
-                    <div class="form-outline datepicker">
-                      <input type="text" class="form-control" id="exampleDatepicker1" />
-                      <label for="exampleDatepicker1" class="form-label">Select a date</label>
-                    </div>
-  
+  <div class="container py-5 h-100">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-lg-8 col-xl-6">
+        <div class="card rounded-3 text-white" style="background-color: #09008b;">
+          <div class="card-body p-4 p-md-5">
+            <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar usuario</h3>
+
+            <form class="px-md-2">
+
+              <div class="form-outline mb-4">
+                <input type="text" name="correo" class="form-control" />
+                <label class="form-label" >Correo</label>
+              </div>
+              <div class="form-outline mb-4">
+                <input type="password" name="password" class="form-control" />
+                <label class="form-label">Contraseña</label>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-4">
+
+                  <div class="form-outline datepicker">
+                    <input type="text" class="form-control" name="nombre" />
+                    <label for="exampleDatepicker1" class="form-label">Nombre</label>
                   </div>
-                  <div class="col-md-6 mb-4">
-  
-                    <select class="select">
-                      <option value="1" disabled>Gender</option>
-                      <option value="2">Female</option>
-                      <option value="3">Male</option>
-                      <option value="4">Other</option>
-                    </select>
-  
-                  </div>
+
                 </div>
-  
-                <div class="mb-4">
-  
-                  <select class="select">
-                    <option value="1" disabled>Class</option>
-                    <option value="2">Class 1</option>
-                    <option value="3">Class 2</option>
-                    <option value="4">Class 3</option>
+                <div class="col-md-6 mb-4">
+                  <div class="form-outline datepicker">
+                    <input type="text" class="form-control" name="apellidos" />
+                    <label for="exampleDatepicker1" class="form-label">Apellidos</label>
+                  </div>                
+                </div>
+              </div>
+
+              
+
+              <div class="row mb-4 pb-2 pb-md-0 mb-md-5">
+                
+                <div class="col-md-6">
+
+                  <div class="form-outline">
+                    <input type="number" name="credito" class="form-control" />
+                    <label class="form-label">Credito</label>
+                  </div>
+
+                </div>
+                <div class="col-md-6 mb-4 text-center">
+
+                  <select class="select" name="tipo_usuario">
+                    <option value="1" disabled>Tipo de usuario</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="distribuidor">Distribuidor</option>
+                    <option value="cliente">Cliente</option>
                   </select>
   
                 </div>
-  
-                <div class="row mb-4 pb-2 pb-md-0 mb-md-5">
-                  <div class="col-md-6">
-  
-                    <div class="form-outline">
-                      <input type="text" id="form3Example1w" class="form-control" />
-                      <label class="form-label" for="form3Example1w">Registration code</label>
-                    </div>
-  
-                  </div>
-                </div>
-  
-                <button type="submit" class="btn btn-success btn-lg mb-1">Submit</button>
-  
-              </form>
-  
-            </div>
+              </div>
+
+              <button type="submit" class="btn btn-success btn-lg mb-1">Registrar</button>
+
+            </form>
+
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
   {% include 'layaout/js.html' %}
   {% if error_message %}
     <script>

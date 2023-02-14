@@ -1,7 +1,9 @@
+import re
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-
+from Usuarios.models import PerfilUsuario
+from validate_email_address import validate_email
 
 
 # Create your views here.  
@@ -19,7 +21,7 @@ def nuevo_registro(request):
         tipo_usuario = "distribuidor"
         
 def listar(request):
-    users = User.objects.select_related('userprofile').all()
+    users = User.objects.select_related('PerfilUsuario').all()
     return render(request,'Usuarios/listado.html')
 
 def editar(request):
@@ -29,8 +31,25 @@ def eliminar(request):
     pass
 
 def registro(request):
+    if request.method == 'POST':
+        correo = request.POST['correo']
+        password = request.POST['password']
+        nombre = request.POST['nombre']
+        apellidos = request.POST['apellidos']
+        tipo_usuario = request.POST['tipo_usuario']
+        credito = request.POST['credito']
+        if User.objects.filter(email=correo).exists():    
+            return render(request, 'registro.html', {'error_message': 'El correo electrónico ya están en uso'})
+        if not re.search("^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{10,}$", password):
+            return render(request, 'registro.html', {'error_message': 'La contraseña debe tener al menos 10 caracteres y contener números y caracteres especiales'})
+        user = User.objects.create_user(password=password,firs_name=nombre,last_name=apellidos,email=correo)
+        perfil= PerfilUsuario(user=user)
+        perfil.user_tipe=tipo_usuario
+        perfil.credito=credito
+        perfil.save()
+        return redirect('registro')
     return render(request,'Usuarios/registro.html')
 
 @login_required
-def perfil(request):
+def perfilCliente(request):
     pass
