@@ -60,4 +60,4 @@ def registro(request):
 
 @login_required
 def perfilCliente(request):
-    pass
+    
