@@ -1,4 +1,5 @@
 from django.shortcuts import render,redirect
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 # Create your views here.
 
@@ -13,7 +14,7 @@ def perfil(request):
 
 def login_user(request):
     if request.method == 'POST':
-        username = request.POST['username']
+        username = request.POST['correo']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user is not None:
@@ -21,7 +22,7 @@ def login_user(request):
             return redirect('home')
         else:
             # Muestra un mensaje de error si los credenciales no son válidos
-            return render(request, 'login.html', {'error_message': 'Datos incorrectos'})
+            return render(request, 'Tienda/login.html', {'error_message': 'Datos incorrectos'})
     return render(request,'Tienda/login.html')
 
 def logout_user(request):

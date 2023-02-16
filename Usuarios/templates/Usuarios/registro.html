@@ -30,19 +30,12 @@
           <div class="card-body p-4 p-md-5">
             <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar usuario</h3>
 
-            <form class="px-md-2">
-
-              <div class="form-outline mb-4">
-                <input type="text" name="correo" class="form-control" />
-                <label class="form-label" >Correo</label>
-              </div>
-              <div class="form-outline mb-4">
-                <input type="password" name="password" class="form-control" />
-                <label class="form-label">Contraseña</label>
-              </div>
+            <form class="px-md-2" method="POST" action="">{% csrf_token %}
+              
+              
 
               <div class="row">
-                <div class="col-md-6 mb-4">
+                <div class="col-md-12 mb-4">
 
                   <div class="form-outline datepicker">
                     <input type="text" class="form-control" name="nombre" />
@@ -50,7 +43,9 @@
                   </div>
 
                 </div>
-                <div class="col-md-6 mb-4">
+              </div>
+              <div class="row">
+                <div class="col-md-12 mb-4">
                   <div class="form-outline datepicker">
                     <input type="text" class="form-control" name="apellidos" />
                     <label for="exampleDatepicker1" class="form-label">Apellidos</label>
@@ -58,28 +53,35 @@
                 </div>
               </div>
 
-              
-
+              <div class="row">
+                <div class="col-md-6 mb-4">
+                  <div class="form-outline mb-4">
+                    <input type="text" name="username" class="form-control" />
+                    <label class="form-label" >Username</label>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                  <div class="form-outline mb-4">
+                    <input type="password" name="password" class="form-control" />
+                    <label class="form-label">Contraseña</label>
+                  </div>
+                </div>
+              </div>
               <div class="row mb-4 pb-2 pb-md-0 mb-md-5">
-                
+                <div class="col-md-6 mb-4">
+                  <div class="form-outline mb-4">
+                    <input type="text" name="correo" class="form-control" />
+                    <label class="form-label" >Correo</label>
+                  </div>
+                </div>
                 <div class="col-md-6">
-
                   <div class="form-outline">
                     <input type="number" name="credito" class="form-control" />
                     <label class="form-label">Credito</label>
                   </div>
-
                 </div>
-                <div class="col-md-6 mb-4 text-center">
+                
 
-                  <select class="select" name="tipo_usuario">
-                    <option value="1" disabled>Tipo de usuario</option>
-                    <option value="administrador">Administrador</option>
-                    <option value="distribuidor">Distribuidor</option>
-                    <option value="cliente">Cliente</option>
-                  </select>
-  
-                </div>
               </div>
 
               <button type="submit" class="btn btn-success btn-lg mb-1">Registrar</button>
