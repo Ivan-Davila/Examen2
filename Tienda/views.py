@@ -7,11 +7,6 @@ def home(request):
     return render(request,'Tienda/home.html')
 
 
-def perfil(request):
-    pass
-
-
-
 def login_user(request):
     if request.method == 'POST':
         username = request.POST['correo']

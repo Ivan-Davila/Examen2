@@ -1,5 +1,5 @@
 import re
-from django.shortcuts import render,redirect
+from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from Usuarios.models import PerfilUsuario
@@ -8,7 +8,7 @@ from validate_email_address import validate_email
 
 
 # Create your views here.  
-       
+@login_required(login_url='/login/')       
 def listar(request):
     user=request.user 
     if user.perfilusuario.user_type == 'administrador' :
@@ -18,11 +18,24 @@ def listar(request):
     
     return render(request,'Usuarios/listado.html',{'usuarios':usuarios})
 
-def editar(request):
-    pass
+@login_required(login_url='/login/')
+def editar(request,id_usuario):
+    usuario = User.objects.select_related('perfilusuario').get(id=id_usuario)
+    if request.method == 'POST':
+        usuario.first_name=request.POST['nombre']
+        usuario.last_name=request.POST['apellidos']
+        usuario.email=request.POST['correo']
+        usuario.username=request.POST['username']
+        if request.POST['password']:
+            usuario.password=request.POST['password']
+        usuario.save()
+    return render(request,'Usuarios/editar.html',{'usuario':usuario})
 
-def eliminar(request):
-    pass
+@login_required(login_url='/login/')
+def eliminar(request,id_usuario):
+    usuario = get_object_or_404(User, pk=id_usuario)
+    usuario.delete()
+    return redirect('lista')
 
 @login_required(login_url='/login/')
 def registro(request):
@@ -51,13 +64,13 @@ def registro(request):
             perfil.creditos=credito
             perfil.registra=registrando
             perfil.save()
-            return redirect('registro')
+            return redirect('registrar')
         return render(request,'Usuarios/registro.html')
     else:
         messages.warning(request, "No tienes permiso para registrar nuevos usuarios")
         return redirect('home')
 
 
-@login_required
-def perfilCliente(request):
-    
+@login_required(login_url='/login/')
+def perfil(request):
+    return render(request,'Usuarios/perfilCliente.html')
