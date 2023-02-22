@@ -9,10 +9,11 @@ from openpyxl import Workbook
 from django.http import HttpResponse
 from django.utils import timezone
 import pytz
+from django.contrib.auth.decorators import permission_required
 
 
 # Create your views here.  
-@login_required(login_url='/login/')       
+@permission_required('app.can_view_users_list')   
 def listar(request):
     user=request.user 
     if user.perfilusuario.user_type == 'administrador' :
@@ -53,11 +54,13 @@ def registro(request):
             password = request.POST['password']
             nombre = request.POST['nombre']
             apellidos = request.POST['apellidos']
+            credito = request.POST['credito']
+            if not validate_email(correo):
+                return render(request, 'Usuarios/registro.html', {'error_message': 'El correo electrónico es invalido'})
             if user.perfilusuario.user_type == 'administrador' :
                 tipo_usuario = 'distribuidor'
             elif user.perfilusuario.user_type == 'distribuidor' :
                 tipo_usuario='cliente'
-            credito = request.POST['credito']
             if User.objects.filter(email=correo).exists():    
                 return render(request, 'Usuarios/registro.html', {'error_message': 'El correo electrónico ya están en uso'})
             if not re.search("^(?=.*[0-9])(?=.*[!@#$%^&*-_.])[a-zA-Z0-9!@#$%^&*]{10,}$", password):

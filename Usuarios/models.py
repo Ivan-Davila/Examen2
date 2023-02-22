@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission
+
 # Create your models here.
 
 class TipoUsuario(models.Model):
@@ -14,3 +16,7 @@ class PerfilUsuario(models.Model):
     ])
     creditos=models.PositiveIntegerField()
     registra=models.IntegerField()
+    class Meta:
+        permissions = [
+            ('can_view_users_list', 'Can view users list'),
+        ]
