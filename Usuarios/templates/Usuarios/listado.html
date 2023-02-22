@@ -3,14 +3,17 @@
 {% block content %}
 {% include 'layaout/navbar.html' %}
 
-<div class="container">
+<div class="container mt-3">
     <div class="row mb-3">
-        <div class="col">
+        <div class="col-2">
             {% if user.perfilusuario.user_type == 'administrador' %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar distribuidor</a>
             {% else %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar cliente</a>
             {% endif %}
+        </div>
+        <div class="col-2">
+          <a href="{% url 'exportar' %}" class="btn btn-primary">Exportar a Excel</a>
         </div>
     </div>
 </div>
@@ -18,12 +21,14 @@
 <table class="table">
     <thead>
       <tr>
+        
         <th>Nombre</th>
         <th>Email</th>
         <th>Nombre de usuario</th>
         {% if user.perfilusuario.user_type == 'administrador' %}
             <th>Tipo de usuario</th>
         {% endif %}
+        <th>Activo</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -34,12 +39,22 @@
         <td>{{ usuario.email }}</td>
         <td>{{ usuario.username }}</td>
         {% if user.perfilusuario.user_type == 'administrador' %}
-            <td>{{ usuario.perfilusuario.user_type }}</td>
+          <td>{{ usuario.perfilusuario.user_type }}</td>
         {% endif %}
+        <td>
+          {% if usuario.perfilusuario.registra == user.id %}
+            <input type="checkbox" class="activo-checkbox" {% if usuario.is_active %}checked{% endif %} data-id="{{ usuario.id }}">
+          {% else %}
+          <input type="checkbox" class="activo-checkbox" disabled {% if usuario.is_active %}checked{% endif %} data-id="{{ usuario.id }}">
+          {% endif %}
+        </td>
         <td>
             {% if usuario.perfilusuario.registra == user.id %}
                 <a href="{% url 'editar' usuario.id %}" class="btn btn-primary">Editar</a>
                 <a href="{% url 'eliminar' usuario.id %}" class="btn btn-danger">Eliminar</a>
+            {% else %}
+              <button disabled class="btn btn-secondary">Editar</button>
+              <button disabled class="btn btn-secondary">Eliminar</button>
             {% endif %}
         </td>
       </tr>
@@ -48,4 +63,26 @@
   </table>
 
 {% include 'layaout/js.html' %}
+<script>
+  $(document).ready(function() {
+      $('.activo-checkbox').change(function() {
+          var checkbox = $(this);
+          var usuario_id = checkbox.data('id');
+          var activo = checkbox.prop('checked');
+          $.ajax({
+              url: '/cambiar-estado/',
+              data: {
+                  usuario_id: usuario_id,
+                  activo: activo
+              },
+              success: function(response) {
+                  // Opcional: mostrar una notificación de éxito
+              },
+              error: function() {
+                  // Opcional: mostrar una notificación de error
+              }
+          });
+      });
+  });
+  </script>
 {% endblock %}

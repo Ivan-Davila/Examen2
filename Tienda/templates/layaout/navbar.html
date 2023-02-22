@@ -19,6 +19,13 @@
             </ul>
         </div>
     </div>
+    <div style="float:right">
+        {% if request.user.is_authenticated %}
+            <div class="text-white">
+                credito: $<span id="creditos">{{user.perfilusuario.creditos}} </span>                
+            </div>
+        {% endif %}
+    </div>
 </nav>
 {% if messages %}
     {% for message in messages %}

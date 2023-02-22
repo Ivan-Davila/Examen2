@@ -5,6 +5,10 @@ from django.contrib.auth.models import User
 from Usuarios.models import PerfilUsuario
 from django.contrib import messages
 from validate_email_address import validate_email
+from openpyxl import Workbook
+from django.http import HttpResponse
+from django.utils import timezone
+import pytz
 
 
 # Create your views here.  
@@ -74,3 +78,58 @@ def registro(request):
 @login_required(login_url='/login/')
 def perfil(request):
     return render(request,'Usuarios/perfilCliente.html')
+
+@login_required(login_url='/login/')
+def exportar(request):
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="users.xlsx"'
+
+    workbook = Workbook()
+
+    # Selecciona la hoja activa
+    worksheet = workbook.active
+    worksheet.title = 'Usuarios'
+
+    # Añade los encabezados
+    columns = [
+        'ID',
+        'Nombre',
+        'Apellido',
+        'Correo electrónico',
+        'Tipo de usuario',
+        'Credito',
+        'Activo',
+        'Fecha de registro'
+    ]
+    row_num=1
+    for col_num, column_title in enumerate(columns,1):
+        cell = worksheet.cell(row=row_num,column=col_num)
+        cell.value = column_title
+    
+    #Añade los datos
+    users = User.objects.select_related('perfilusuario').all()
+    for user in users:
+        row_num += 1
+        date_joined = user.date_joined.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
+        if user.is_active:
+            activo='si'
+        else:
+            activo='no'
+        row = [
+            user.id,
+            user.first_name,
+            user.last_name,
+            user.email,
+            user.perfilusuario.user_type,
+            user.perfilusuario.creditos,
+            activo,
+            date_joined
+        ]
+        for col_num, cell_value in enumerate(row,1):
+            cell = worksheet.cell(row=row_num,column=col_num)
+            cell.value = cell_value
+    
+    workbook.save(response)
+    return response
+    
+
