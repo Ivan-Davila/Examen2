@@ -10,20 +10,49 @@ from django.http import HttpResponse
 from django.utils import timezone
 import pytz
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Permission
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import JsonResponse
+
 
 
 # Create your views here.  
-@permission_required('app.can_view_users_list')   
+@login_required(login_url='/login/')
+@permission_required('Usuarios.can_view_users_list', login_url='/')   
 def listar(request):
     user=request.user 
     if user.perfilusuario.user_type == 'administrador' :
         usuarios = User.objects.select_related('perfilusuario').all()
     elif user.perfilusuario.user_type == 'distribuidor' :
-        usuarios = User.objects.select_related('perfilusuario').filter(registra=user)
+        usuarios = User.objects.select_related('perfilusuario').filter(perfilusuario__registra=user.id)
     
-    return render(request,'Usuarios/listado.html',{'usuarios':usuarios})
+    nombre = request.GET.get('nombre')
+    correo = request.GET.get('correo')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+
+    # Filtrar los usuarios en base a los parámetros de búsqueda
+    if nombre:
+        usuarios = usuarios.filter(Q(first_name__icontains=nombre))
+    
+    if correo:
+        usuarios = usuarios.filter(Q(email__icontains=correo))
+    
+    if fecha_desde and fecha_hasta:
+        usuarios = usuarios.filter(Q(date_joined__gte=fecha_desde) & Q(date_joined__lte=fecha_hasta))
+
+
+    paginator = Paginator(usuarios,5)
+    page_number=request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    print(page_obj)
+    return render(request,'Usuarios/listado.html',{'page_obj':page_obj})
+       
 
 @login_required(login_url='/login/')
+@permission_required('Usuarios.can_view_users_list',login_url='/')   
 def editar(request,id_usuario):
     usuario = User.objects.select_related('perfilusuario').get(id=id_usuario)
     if request.method == 'POST':
@@ -37,12 +66,14 @@ def editar(request,id_usuario):
     return render(request,'Usuarios/editar.html',{'usuario':usuario})
 
 @login_required(login_url='/login/')
+@permission_required('Usuarios.can_view_users_list',login_url='/')
 def eliminar(request,id_usuario):
     usuario = get_object_or_404(User, pk=id_usuario)
     usuario.delete()
     return redirect('lista')
 
 @login_required(login_url='/login/')
+@permission_required('Usuarios.can_view_users_list',login_url='/')
 def registro(request):
     user=request.user
     if not user.perfilusuario.user_type == 'cliente':
@@ -71,6 +102,9 @@ def registro(request):
             perfil.creditos=credito
             perfil.registra=registrando
             perfil.save()
+            if user.perfilusuario.user_type == 'distribuidor':
+                can_view_users_list_permission = Permission.objects.get(codename='can_view_users_list')
+                user.user_permissions.add(can_view_users_list_permission)
             return redirect('registrar')
         return render(request,'Usuarios/registro.html')
     else:
@@ -80,9 +114,28 @@ def registro(request):
 
 @login_required(login_url='/login/')
 def perfil(request):
+    usuario=request.user
+    if request.method == 'POST':
+        usuario.first_name=request.POST['nombre']
+        usuario.last_name=request.POST['apellidos']
+        usuario.email=request.POST['correo']
+        usuario.save()
     return render(request,'Usuarios/perfilCliente.html')
 
+@login_required
+def suspender(request):
+    usuario_id = request.GET.get('usuario_id')
+    if request.GET.get('activo') == 'true':
+        activo=1
+    else:
+        activo=0
+    usuario = User.objects.get(id=usuario_id)
+    usuario.is_active = activo
+    usuario.save()
+    return JsonResponse({'success': True})
+
 @login_required(login_url='/login/')
+@permission_required('Usuarios.can_view_users_list',login_url='/')
 def exportar(request):
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="users.xlsx"'

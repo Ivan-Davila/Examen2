@@ -4,36 +4,60 @@
 {% include 'layaout/navbar.html' %}
 
 <div class="container mt-3">
-    <div class="row mb-3">
-        <div class="col-2">
+    <div class="row mb-3 justify-content-center">
+        <div class="col-3">
             {% if user.perfilusuario.user_type == 'administrador' %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar distribuidor</a>
             {% else %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar cliente</a>
             {% endif %}
         </div>
-        <div class="col-2">
+        <div class="col-3">
           <a href="{% url 'exportar' %}" class="btn btn-primary">Exportar a Excel</a>
         </div>
     </div>
 </div>
 
-<table class="table">
+<form method="GET" action="{% url 'lista' %}">
+  <div class="text-center">Filtros</div>
+  <div class="row mx-2">
+    <div class="col-md-3 mb-2">
+      <label for="inputName" class="sr-only">Nombre</label>
+      <input type="text" name="nombre" class="form-control" id="inputName" placeholder="Nombre">
+    </div>
+    <div class="col-md-3 mb-2">
+      <label for="inputEmail" class="sr-only">Correo electrónico</label>
+      <input type="email" name="correo" class="form-control" id="inputEmail" placeholder="Correo electrónico">
+    </div>
+    <div class="col-md-3 mb-2">
+      <label for="inputDate" class="sr-only">Fecha de creación desde</label>
+      <input type="date" name="fecha_desde" class="form-control" id="inputDate" placeholder="Fecha de creación">
+    </div>
+    <div class="col-md-3 mb-2">
+      <label for="inputDate" class="sr-only">Fecha de creación hasta</label>
+      <input type="date" name="fecha_hasta" class="form-control" id="inputDate" placeholder="Fecha de creación">
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary mb-2 ms-3">Buscar</button>
+</form>
+
+<table class="table mx-2">
     <thead>
       <tr>
-        
         <th>Nombre</th>
         <th>Email</th>
         <th>Nombre de usuario</th>
         {% if user.perfilusuario.user_type == 'administrador' %}
-            <th>Tipo de usuario</th>
+          <th>Tipo de usuario</th>
+        {% elif user.perfilusuario.user_type == 'distribuidor' %}
+          <th>Credito</th>
         {% endif %}
         <th>Activo</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      {% for usuario in usuarios %}
+      {% for usuario in page_obj %}
       <tr>
         <td>{{ usuario.first_name }} {{usuario.last_name}} </td>
         <td>{{ usuario.email }}</td>
@@ -61,6 +85,26 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <div class="pagination justify-content-center">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="btn btn-light">&laquo; Inicio</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-light">&lsaquo; Anterior</a>
+        {% endif %}
+
+        <span class="current-page">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-light">Siguiente &rsaquo;</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-light">Ultima &raquo;</a>
+        {% endif %}
+    </span>
+  </div>
+
+
 
 {% include 'layaout/js.html' %}
 <script>

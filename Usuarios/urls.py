@@ -9,5 +9,6 @@ urlpatterns=[
     path('eliminar/<int:id_usuario>',views.eliminar,name='eliminar'),
     path('perfil/',views.perfil,name='perfil'),
     path('exportar/',views.exportar,name='exportar'),
+    path('suspender/',views.suspender,name='suspender'),
 
 ]

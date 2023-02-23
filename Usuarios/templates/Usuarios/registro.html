@@ -31,9 +31,6 @@
             <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar usuario</h3>
 
             <form class="px-md-2" method="POST" action="">{% csrf_token %}
-              
-              
-
               <div class="row">
                 <div class="col-md-12 mb-4">
 
@@ -74,7 +71,7 @@
                     <label class="form-label" >Correo</label>
                   </div>
                 </div>
-                {% if user.perfilusuario.user_type == 'administrador' %}
+                {% if user.perfilusuario.user_type == 'distribuidor' %}
                   <div class="col-md-6">
                     <div class="form-outline">
                       <input type="number" name="credito" class="form-control" />
