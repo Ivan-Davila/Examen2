@@ -1,0 +1,34 @@
+{% extends 'layaout/base.html' %}
+
+{% block content %}
+
+{% include 'layaout/navbar.html' %}
+<section class="h-100 h-custom">
+    <div class="container py-5 h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col-lg-8 col-xl-6">
+          <div class="card rounded-3 text-white" style="background-color: #09008b;">
+            <div class="card-body p-4 p-md-5">
+              <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar usuario</h3>
+  
+              <form class="px-md-2" method="POST" action="">{% csrf_token %}
+                <div class="row">
+                  <div class="col-md-12 mb-4">
+                    <div class="form-outline datepicker">
+                      <input type="number" class="form-control" name="credito" value="{{cliente.perfilusuario.creditos}}"/>
+                      <label for="credito" class="form-label">Credito</label>
+                    </div>
+  
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg mb-1">Editar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+{% include 'layaout/js.html' %}
+{% endblock %}

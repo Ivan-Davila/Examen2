@@ -47,8 +47,13 @@ def listar(request):
     paginator = Paginator(usuarios,5)
     page_number=request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    print(page_obj)
-    return render(request,'Usuarios/listado.html',{'page_obj':page_obj})
+    perm = request.user.has_perm('Usuarios.cambiar_credito')
+    print(perm)
+    context = {
+        'page_obj': page_obj,
+        'perm': perm,
+    }
+    return render(request,'Usuarios/listado.html',context)
        
 
 @login_required(login_url='/login/')
@@ -122,14 +127,16 @@ def perfil(request):
         usuario.save()
     return render(request,'Usuarios/perfilCliente.html')
 
-@login_required
 def suspender(request):
     usuario_id = request.GET.get('usuario_id')
     if request.GET.get('activo') == 'true':
         activo=1
     else:
         activo=0
+    print(usuario_id)
+    print(activo)
     usuario = User.objects.get(id=usuario_id)
+    print(usuario.first_name)
     usuario.is_active = activo
     usuario.save()
     return JsonResponse({'success': True})
@@ -187,5 +194,18 @@ def exportar(request):
     
     workbook.save(response)
     return response
-    
 
+def get_credits(request):
+    user = request.user
+    return JsonResponse({'credits': user.perfilusuario.creditos})
+
+@login_required(login_url='/login/')
+@permission_required('Usuarios.cambiar_credito', login_url='/')       
+def editar_credito(request, cliente_id):
+    cliente = get_object_or_404(User, id=cliente_id)
+    if request.method == 'POST':
+        cliente.perfilusuario.creditos = request.POST['credito']
+        cliente.save()
+        return render(request, 'Usuarios/editar_credito.html', {'cliente': cliente})
+    else:
+        return render(request, 'Usuarios/editar_credito.html', {'cliente': cliente})

@@ -19,4 +19,5 @@ class PerfilUsuario(models.Model):
     class Meta:
         permissions = [
             ('can_view_users_list', 'Can view users list'),
+            ('cambiar_credito', 'Cambiar credito de cliente')
         ]

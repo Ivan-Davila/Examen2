@@ -22,9 +22,10 @@
     {% if user.perfilusuario.user_type == 'cliente' %}
         <div style="float:right">
             {% if request.user.is_authenticated %}
-                <div class="text-white me-2">
-                    credito: $<span id="creditos">{{user.perfilusuario.creditos}} </span>                
+                <div class="text-white me-2" id="credits-container">
+                    credito: $<span id="user-credits">{{user.perfilusuario.creditos}} </span>                
                 </div>
+                <div id="dolar" class="text-white me-2"></div>
             {% endif %}
         </div>
     {% endif %}
@@ -36,3 +37,4 @@
         </div>
     {% endfor %}
 {% endif %}
+

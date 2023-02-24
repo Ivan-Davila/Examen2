@@ -10,5 +10,7 @@ urlpatterns=[
     path('perfil/',views.perfil,name='perfil'),
     path('exportar/',views.exportar,name='exportar'),
     path('suspender/',views.suspender,name='suspender'),
+    path('get-credits/',views.get_credits,name='get_credits'),
+    path('editar-credito/<int:cliente_id>',views.editar_credito,name='editar_credito')
 
 ]
