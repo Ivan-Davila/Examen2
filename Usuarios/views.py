@@ -48,7 +48,6 @@ def listar(request):
     page_number=request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     perm = request.user.has_perm('Usuarios.cambiar_credito')
-    print(perm)
     context = {
         'page_obj': page_obj,
         'perm': perm,
@@ -60,21 +59,26 @@ def listar(request):
 @permission_required('Usuarios.can_view_users_list',login_url='/')   
 def editar(request,id_usuario):
     usuario = User.objects.select_related('perfilusuario').get(id=id_usuario)
-    if request.method == 'POST':
-        usuario.first_name=request.POST['nombre']
-        usuario.last_name=request.POST['apellidos']
-        usuario.email=request.POST['correo']
-        usuario.username=request.POST['username']
-        if request.POST['password']:
-            usuario.password=request.POST['password']
-        usuario.save()
-    return render(request,'Usuarios/editar.html',{'usuario':usuario})
+    if usuario.perfilusuario.registra == request.user.id:
+        if request.method == 'POST':
+            usuario.first_name=request.POST['nombre']
+            usuario.last_name=request.POST['apellidos']
+            usuario.email=request.POST['correo']
+            usuario.username=request.POST['username']
+            if request.POST['password']:
+                usuario.password=request.POST['password']
+            usuario.save()
+        return render(request,'Usuarios/editar.html',{'usuario':usuario})
+    return render(request, 'Usuarios/listado.html', {'error_message': 'no tienes permiso para editar este usuario.'})
 
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list',login_url='/')
 def eliminar(request,id_usuario):
     usuario = get_object_or_404(User, pk=id_usuario)
-    usuario.delete()
+    if usuario.perfilusuario.registra == request.user.id:
+        usuario.delete()
+    else:
+        return render(request, 'Usuarios/listado.html', {'error_message': 'no tienes permiso para eliminar este usuario.'})
     return redirect('lista')
 
 @login_required(login_url='/login/')
@@ -93,7 +97,9 @@ def registro(request):
             credito = request.POST['credito']
             if not validate_email(correo):
                 return render(request, 'Usuarios/registro.html', {'error_message': 'El correo electrónico es invalido'})
-            if user.perfilusuario.user_type == 'administrador' :
+            if user.is_superuser:
+                tipo_usuario == 'administrador'
+            elif user.perfilusuario.user_type == 'administrador' :
                 tipo_usuario = 'distribuidor'
             elif user.perfilusuario.user_type == 'distribuidor' :
                 tipo_usuario='cliente'
@@ -107,7 +113,7 @@ def registro(request):
             perfil.creditos=credito
             perfil.registra=registrando
             perfil.save()
-            if user.perfilusuario.user_type == 'distribuidor':
+            if user.perfilusuario.user_type == 'distribuidor' or user.perfilusuario.user_type == 'administrador':
                 can_view_users_list_permission = Permission.objects.get(codename='can_view_users_list')
                 user.user_permissions.add(can_view_users_list_permission)
             return redirect('registrar')
@@ -168,8 +174,6 @@ def exportar(request):
     for col_num, column_title in enumerate(columns,1):
         cell = worksheet.cell(row=row_num,column=col_num)
         cell.value = column_title
-    
-    #Añade los datos
     users = User.objects.select_related('perfilusuario').all()
     for user in users:
         row_num += 1
