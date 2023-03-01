@@ -15,7 +15,7 @@ from django.contrib.auth.models import Permission
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
-
+from .forms import RegistroClienteForm
 
 
 # Create your views here.  
@@ -83,6 +83,14 @@ def eliminar(request,id_usuario):
 
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list',login_url='/')
+def login(request):
+    if request.method == 'POST':
+        form = RegistroClienteForm
+        if form.is_valid():
+            user=form.save()
+            user_profile = PerfilUsuario.
+
+"""
 def registro(request):
     user=request.user
     if not user.perfilusuario.user_type == 'cliente':
@@ -121,6 +129,7 @@ def registro(request):
     else:
         messages.warning(request, "No tienes permiso para registrar nuevos usuarios")
         return redirect('home')
+"""
 
 
 @login_required(login_url='/login/')

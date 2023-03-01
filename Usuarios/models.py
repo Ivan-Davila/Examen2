@@ -12,6 +12,9 @@ class PerfilUsuario(models.Model):
     ])
     creditos=models.PositiveIntegerField()
     registra=models.IntegerField()
+
+    def __str__(self):
+        return self.user.username
     class Meta:
         permissions = [
             ('can_view_users_list', 'Can view users list'),
