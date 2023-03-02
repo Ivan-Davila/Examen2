@@ -6,7 +6,7 @@
 <div class="container mt-3">
     <div class="row mb-3 justify-content-center">
         <div class="col-3">
-            {% if user.perfilusuario.user_type == 'administrador' %}
+            {% if user.perfilusuario.tipo_usuario == 'A' %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar distribuidor</a>
             {% else %}
                 <a href="{% url 'registrar' %}" class="btn btn-success mb-3">Registrar cliente</a>
@@ -47,7 +47,7 @@
         <th>Nombre</th>
         <th>Email</th>
         <th>Nombre de usuario</th>
-        {% if user.perfilusuario.user_type == 'administrador' %}
+        {% if user.perfilusuario.tipo_usuario == 'A' %}
           <th>Tipo de usuario</th>
         {% endif %}
         <th>Credito</th>
@@ -62,8 +62,8 @@
         <td>{{ usuario.first_name }} {{usuario.last_name}} </td>
         <td>{{ usuario.email }}</td>
         <td>{{ usuario.username }}</td>
-        {% if user.perfilusuario.user_type == 'administrador' %}
-          <td>{{ usuario.perfilusuario.user_type }}</td>
+        {% if user.perfilusuario.tipo_usuario == 'A' %}
+          <td>{{ usuario.perfilusuario.get_tipo_usuario_display }}</td>
         {% endif %}
         <td>
           {{ usuario.perfilusuario.creditos}}
@@ -72,14 +72,14 @@
           {% endif %}
         </td>
         <td>
-          {% if usuario.perfilusuario.registra == user.id %}
+          {% if usuario.perfilusuario.registrado_por_id == user.id %}
             <input type="checkbox" class="activo-checkbox" {% if usuario.is_active %}checked{% endif %} data-id="{{ usuario.id }}">
           {% else %}
           <input type="checkbox" class="activo-checkbox" disabled {% if usuario.is_active %}checked{% endif %} data-id="{{ usuario.id }}">
           {% endif %}
         </td>
         <td>
-            {% if usuario.perfilusuario.registra == user.id %}
+            {% if usuario.perfilusuario.registrado_por_id == user.id %}
                 <a href="{% url 'editar' usuario.id %}" class="btn btn-primary">Editar</a>
                 <a href="{% url 'eliminar' usuario.id %}" class="btn btn-danger">Eliminar</a>
             {% else %}

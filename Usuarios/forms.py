@@ -1,37 +1,48 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
-from django.core.validators import RegexValidator, MinLengthValidator
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import PerfilUsuario
 from django.contrib.auth.models import User
+from .validators import validar_contrasena
 
 class LoginForm(forms.Form):
     username = forms.CharField(label='Nombre de usuario', max_length=100)
     password = forms.CharField(label='Contraseña', widget=forms.PasswordInput)
 
-class RegistroClienteForm(AuthenticationForm):
-    first_name = forms.CharField(label="Nombre")
-    last_name = forms.CharField(label="Apellido")
-    username = forms.CharField(label="Nombre de usuario")
-    password = forms.CharField(
-        label="Contraseña",
-        strip=False,
-        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),
-        validators=[
-            RegexValidator(
-                regex=r'^[\d\W]+$',
-                message='La contraseña debe contener solo números y caracteres especiales',
-            ),
-            MinLengthValidator(
-                limit_value=10,
-                message='La contraseña debe tener al menos 10 caracteres',
-            ),
-        ],
-    )
-    email = forms.EmailField(max_length=254, help_text='Requerido. Ingresa una dirección de correo válida.')
-    credito = forms.IntegerField(initial=0, label="Credito")
-    
+class RegistroUsuarioForm(UserCreationForm):
+    creditos = forms.IntegerField(required=False, initial=None)
+    password1 = forms.CharField(label='Contraseña', widget=forms.PasswordInput(), validators=[validar_contrasena])
+    password2 = forms.CharField(label='Confirmar Contraseña', widget=forms.PasswordInput())
     class Meta:
         model = User
-        fields =('username','email','first_name','last_name','password','user_type','credito')
+        fields = ('username', 'email', 'password1', 'password2', 'first_name','last_name')
 
+    def save(self,request, tipo_usuario, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            perfil_usuario = PerfilUsuario(usuario=user, tipo_usuario=tipo_usuario, creditos=self.cleaned_data.get('creditos'), registrado_por=request.user)
+            perfil_usuario.save()
+        return user
+
+class perfilForm(UserChangeForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        labels = {
+            'username': 'Nombre de usuario',
+            'first_name': 'Nombre',
+            'last_name': 'Apellido',
+            'email': 'Correo electrónico',
+        }
+        widgets = {
+            'username': forms.TextInput(attrs={'readonly': True}),
+        }
+
+    creditos = forms.IntegerField(disabled=True, label='Créditos')
+    username = forms.CharField(disabled=True, label='Nombre de usuario')
+
+    def __init__(self, *args, **kwargs):
+        super(perfilForm, self).__init__(*args, **kwargs)
+        self.fields['creditos'].initial = self.instance.perfilusuario.creditos
+        self.fields['username'].initial = self.instance.username
+        self.fields['password'].widget = forms.HiddenInput()

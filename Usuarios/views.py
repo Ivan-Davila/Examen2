@@ -15,7 +15,7 @@ from django.contrib.auth.models import Permission
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
-from .forms import RegistroClienteForm
+from .forms import RegistroUsuarioForm, perfilForm
 
 
 # Create your views here.  
@@ -23,7 +23,7 @@ from .forms import RegistroClienteForm
 @permission_required('Usuarios.can_view_users_list', login_url='/')   
 def listar(request):
     user=request.user 
-    if user.perfilusuario.user_type == 'administrador' :
+    if user.perfilusuario.tipo_usuario == 'A' :
         usuarios = User.objects.select_related('perfilusuario').all()
     elif user.perfilusuario.user_type == 'distribuidor' :
         usuarios = User.objects.select_related('perfilusuario').filter(perfilusuario__registra=user.id)
@@ -83,12 +83,24 @@ def eliminar(request,id_usuario):
 
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list',login_url='/')
-def login(request):
+def registro(request):
     if request.method == 'POST':
-        form = RegistroClienteForm
+        form = RegistroUsuarioForm(request.POST)
         if form.is_valid():
-            user=form.save()
-            user_profile = PerfilUsuario.
+            if request.user.is_superuser:
+                tipo_usuario = 'A'
+            elif request.user.perfilusuario.user_type == 'A' :
+                tipo_usuario = 'D'
+            elif request.user.perfilusuario.user_type == 'D' :
+                tipo_usuario='C'
+            user = form.save(request,tipo_usuario)
+            return redirect('home')
+    else:
+        tipo_usuario=request.user.perfilusuario.tipo_usuario
+        form = RegistroUsuarioForm()
+        if tipo_usuario == 'A' or request.user.is_superuser:
+            form.fields.pop('creditos')
+    return render(request, 'Usuarios/registroform.html', {'form': form})
 
 """
 def registro(request):
@@ -131,6 +143,11 @@ def registro(request):
         return redirect('home')
 """
 
+@login_required(login_url='/login/')
+def user_detail(request):
+    user_profile = PerfilUsuario.objects.get(usuario=request.user)
+    form = perfilForm(instance=request.user)
+    return render(request, 'Usuarios/perfilForm.html', {'form': form})
 
 @login_required(login_url='/login/')
 def perfil(request):
