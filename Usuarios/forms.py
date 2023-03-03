@@ -9,20 +9,27 @@ class LoginForm(forms.Form):
     password = forms.CharField(label='Contraseña', widget=forms.PasswordInput)
 
 class RegistroUsuarioForm(UserCreationForm):
-    creditos = forms.IntegerField(required=False, initial=None)
+    creditos = forms.IntegerField(required=False, initial=0 )
     password1 = forms.CharField(label='Contraseña', widget=forms.PasswordInput(), validators=[validar_contrasena])
     password2 = forms.CharField(label='Confirmar Contraseña', widget=forms.PasswordInput())
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2', 'first_name','last_name')
 
-    def save(self,request, tipo_usuario, commit=True):
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Este correo electrónico ya está registrado')
+        return email
+    
+    def save(self, request, tipo_usuario, commit=True):
         user = super().save(commit=False)
         if commit:
             user.save()
             perfil_usuario = PerfilUsuario(usuario=user, tipo_usuario=tipo_usuario, creditos=self.cleaned_data.get('creditos'), registrado_por=request.user)
             perfil_usuario.save()
         return user
+
 
 class perfilForm(UserChangeForm):
     class Meta:
