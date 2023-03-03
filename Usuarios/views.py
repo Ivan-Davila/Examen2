@@ -7,15 +7,109 @@ from django.contrib import messages
 from validate_email_address import validate_email
 from openpyxl import Workbook
 from django.http import HttpResponse
-from django.utils import timezone
 import pytz
 from django.contrib.auth.decorators import permission_required
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
 from .forms import RegistroUsuarioForm, perfilForm
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.utils.decorators import method_decorator
+
+
+#Vistas basadas clases
+class RegistroUsuarioView(CreateView):
+    form_class = RegistroUsuarioForm
+    template_name = 'Usuarios/registroform.html'
+    success_url = reverse_lazy('lista')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        tipo_usuario = self.request.user.perfilusuario.tipo_usuario
+        if tipo_usuario != 'A' and not self.request.user.is_superuser:
+            form.fields.pop('creditos')
+        return form
+
+    def form_valid(self, form):
+        # Obtener el tipo de usuario del usuario que está realizando el registro
+        if self.request.user.is_superuser:
+            tipo_usuario = 'A'
+        elif self.request.user.perfilusuario.tipo_usuario == 'A':
+            tipo_usuario = 'D'
+        elif self.request.user.perfilusuario.tipo_usuario == 'D':
+            tipo_usuario = 'C'
+        #Verificar el correo
+        email = form.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            form.add_error('email', 'Este correo ya está registrado')
+            return self.form_invalid(form)
+        # Guardar el formulario
+        user = form.save(self.request,tipo_usuario)
+
+        # Asignar permisos al usuario registrado
+        if tipo_usuario == 'D' or tipo_usuario == 'A':
+            can_view_users_list_permission = Permission.objects.get(codename='can_view_users_list')
+            user.user_permissions.add(can_view_users_list_permission)
+
+        # Redireccionar al éxito
+        messages.error(self.request, 'Usuario registrado', extra_tags='alert-succes')
+        return redirect('lista')
+
+
+
+from .models import User
+
+@method_decorator(permission_required('Usuarios.can_view_users_list', raise_exception=True), name='dispatch')
+class ListarUsuariosView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = User
+    template_name = 'Usuarios/listado.html'
+    context_object_name = 'usuarios'
+    ordering = ['-date_joined']
+    paginate_by = 5
+    permission_required = 'Usuarios.can_view_users_list'
+    login_url = reverse_lazy('login')
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related('perfilusuario')
+        user = self.request.user
+        if user.perfilusuario.tipo_usuario == 'A' :
+            queryset = queryset.all()
+        elif user.perfilusuario.tipo_usuario == 'D' :
+            queryset = queryset.filter(perfilusuario__registrado_por_id=user.id)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        perm = self.request.user.has_perm('Usuarios.cambiar_credito')
+        context['perm'] = perm
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        queryset = self.object_list
+        nombre = request.GET.get('nombre')
+        correo = request.GET.get('correo')
+        fecha_desde = request.GET.get('fecha_desde')
+        fecha_hasta = request.GET.get('fecha_hasta')
+
+        if nombre:
+            queryset = queryset.filter(Q(first_name__icontains=nombre))
+        if correo:
+            queryset = queryset.filter(Q(email__icontains=correo))
+        if fecha_desde and fecha_hasta:
+            queryset = queryset.filter(Q(date_joined__gte=fecha_desde) & Q(date_joined__lte=fecha_hasta))
+
+        paginator = Paginator(queryset, self.paginate_by)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = self.get_context_data(page_obj=page_obj)
+        return self.render_to_response(context)
+
 
 
 # Create your views here.  
@@ -25,8 +119,8 @@ def listar(request):
     user=request.user 
     if user.perfilusuario.tipo_usuario == 'A' :
         usuarios = User.objects.select_related('perfilusuario').all()
-    elif user.perfilusuario.user_type == 'distribuidor' :
-        usuarios = User.objects.select_related('perfilusuario').filter(perfilusuario__registra=user.id)
+    elif user.perfilusuario.tipo_usuario == 'D' :
+        usuarios = User.objects.select_related('perfilusuario').filter(perfilusuario__registrado_por_id=user.id)
     
     nombre = request.GET.get('nombre')
     correo = request.GET.get('correo')
@@ -59,7 +153,7 @@ def listar(request):
 @permission_required('Usuarios.can_view_users_list',login_url='/')   
 def editar(request,id_usuario):
     usuario = User.objects.select_related('perfilusuario').get(id=id_usuario)
-    if usuario.perfilusuario.registra == request.user.id:
+    if usuario.perfilusuario.registrado_por_id == request.user.id:
         if request.method == 'POST':
             usuario.first_name=request.POST['nombre']
             usuario.last_name=request.POST['apellidos']
@@ -69,13 +163,15 @@ def editar(request,id_usuario):
                 usuario.password=request.POST['password']
             usuario.save()
         return render(request,'Usuarios/editar.html',{'usuario':usuario})
-    return render(request, 'Usuarios/listado.html', {'error_message': 'no tienes permiso para editar este usuario.'})
+    else:
+        messages.error(request, 'No tienes permiso para editar este usuario.', extra_tags='alert-danger')
+        return redirect('lista')
 
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list',login_url='/')
 def eliminar(request,id_usuario):
     usuario = get_object_or_404(User, pk=id_usuario)
-    if usuario.perfilusuario.registra == request.user.id:
+    if usuario.perfilusuario.registrado_por_id == request.user.id:
         usuario.delete()
     else:
         return render(request, 'Usuarios/listado.html', {'error_message': 'no tienes permiso para eliminar este usuario.'})
@@ -83,18 +179,18 @@ def eliminar(request,id_usuario):
 
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list',login_url='/')
-def registro(request):
+def registro_form(request):
     if request.method == 'POST':
         form = RegistroUsuarioForm(request.POST)
         if form.is_valid():
             if request.user.is_superuser:
                 tipo_usuario = 'A'
-            elif request.user.perfilusuario.user_type == 'A' :
+            elif request.user.perfilusuario.tipo_usuario == 'A' :
                 tipo_usuario = 'D'
-            elif request.user.perfilusuario.user_type == 'D' :
+            elif request.user.perfilusuario.tipo_usuario == 'D' :
                 tipo_usuario='C'
-            user = form.save(request,tipo_usuario)
-            return redirect('home')
+            form.save(request,tipo_usuario)
+            return redirect('lista')
     else:
         tipo_usuario=request.user.perfilusuario.tipo_usuario
         form = RegistroUsuarioForm()
@@ -102,10 +198,9 @@ def registro(request):
             form.fields.pop('creditos')
     return render(request, 'Usuarios/registroform.html', {'form': form})
 
-"""
 def registro(request):
     user=request.user
-    if not user.perfilusuario.user_type == 'cliente':
+    if not user.perfilusuario.tipo_usuario == 'C':
         if request.method == 'POST':
             registrando=request.user
             registrando=registrando.id
@@ -118,22 +213,22 @@ def registro(request):
             if not validate_email(correo):
                 return render(request, 'Usuarios/registro.html', {'error_message': 'El correo electrónico es invalido'})
             if user.is_superuser:
-                tipo_usuario == 'administrador'
-            elif user.perfilusuario.user_type == 'administrador' :
-                tipo_usuario = 'distribuidor'
-            elif user.perfilusuario.user_type == 'distribuidor' :
-                tipo_usuario='cliente'
+                tipo_usuario == 'A'
+            elif user.perfilusuario.tipo_usuario == 'A' :
+                tipo_usuario = 'D'
+            elif user.perfilusuario.tipo_usuario == 'D' :
+                tipo_usuario='C'
             if User.objects.filter(email=correo).exists():    
                 return render(request, 'Usuarios/registro.html', {'error_message': 'El correo electrónico ya están en uso'})
             if not re.search("^(?=.*[0-9])(?=.*[!@#$%^&*-_.])[a-zA-Z0-9!@#$%^&*]{10,}$", password):
                 return render(request, 'Usuarios/registro.html', {'error_message': 'La contraseña debe tener al menos 10 caracteres y contener números y caracteres especiales(!@#$%^&*-_.)'})
             user = User.objects.create_user(username=username,password=password,first_name=nombre,last_name=apellidos,email=correo)
             perfil= PerfilUsuario(user=user)
-            perfil.user_type=tipo_usuario
+            perfil.tipo_usuario=tipo_usuario
             perfil.creditos=credito
             perfil.registra=registrando
             perfil.save()
-            if user.perfilusuario.user_type == 'distribuidor' or user.perfilusuario.user_type == 'administrador':
+            if user.perfilusuario.tipo_usuario == 'D' or user.perfilusuario.tipo_usuario == 'A':
                 can_view_users_list_permission = Permission.objects.get(codename='can_view_users_list')
                 user.user_permissions.add(can_view_users_list_permission)
             return redirect('registrar')
@@ -141,7 +236,6 @@ def registro(request):
     else:
         messages.warning(request, "No tienes permiso para registrar nuevos usuarios")
         return redirect('home')
-"""
 
 @login_required(login_url='/login/')
 def user_detail(request):
@@ -203,6 +297,7 @@ def exportar(request):
     users = User.objects.select_related('perfilusuario').all()
     for user in users:
         row_num += 1
+        tipo_usuario=user.perfilusuario.get_tipo_usuario_display()
         date_joined = user.date_joined.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
         if user.is_active:
             activo='si'
@@ -213,7 +308,7 @@ def exportar(request):
             user.first_name,
             user.last_name,
             user.email,
-            user.perfilusuario.user_type,
+            tipo_usuario,
             user.perfilusuario.creditos,
             activo,
             date_joined
