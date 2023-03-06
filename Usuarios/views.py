@@ -71,15 +71,15 @@ class ListarUsuariosView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     ordering = ['-date_joined']
     paginate_by = 5
     permission_required = 'Usuarios.can_view_users_list'
-    login_url = reverse_lazy('login')
+    login_url = reverse_lazy('home')
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related('perfilusuario')
         user = self.request.user
         if user.perfilusuario.tipo_usuario == 'A' :
-            queryset = queryset.all()
+            queryset = queryset.values('username', 'email', 'first_name', 'last_name', 'perfilusuario__tipo_usuario')
         elif user.perfilusuario.tipo_usuario == 'D' :
-            queryset = queryset.filter(perfilusuario__registrado_por_id=user.id)
+            queryset = User.objects.select_related('perfilusuario').filter(perfilusuario__registrado_por_id=user.id).values('username', 'email', 'first_name', 'last_name', 'perfilusuario__tipo_usuario')
         return queryset
 
     def get_context_data(self, **kwargs):
