@@ -1,5 +1,5 @@
 {% extends 'layaout/base.html' %}
-
+{% load crispy_forms_tags %}
 {% block content %}
 
   
@@ -13,59 +13,7 @@
             <h3 class="mb-4 pb-2 pb-md-0 mb-md-5 px-md-2">Registrar usuario</h3>
 
             <form class="px-md-2" method="POST" action="">{% csrf_token %}
-              
-              
-
-              <div class="row">
-                <div class="col-md-12 mb-4">
-
-                  <div class="form-outline datepicker">
-                    <input type="text" class="form-control" name="nombre" value="{{usuario.first_name}}"/>
-                    <label for="exampleDatepicker1" class="form-label">Nombre</label>
-                  </div>
-
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12 mb-4">
-                  <div class="form-outline datepicker">
-                    <input type="text" class="form-control" name="apellidos" value="{{usuario.last_name}}" />
-                    <label for="exampleDatepicker1" class="form-label">Apellidos</label>
-                  </div>                
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6 mb-4">
-                  <div class="form-outline mb-4">
-                    <input type="text" name="username" class="form-control" value="{{usuario.username}}"/>
-                    <label class="form-label" >Username</label>
-                  </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                  <div class="form-outline mb-4">
-                    <input type="password" name="password" class="form-control"/>
-                    <label class="form-label">Cambiar contraseña</label>
-                  </div>
-                </div>
-              </div>
-              <div class="row mb-4 pb-2 pb-md-0 mb-md-5">
-                <div class="col-md-6 mb-4">
-                  <div class="form-outline mb-4">
-                    <input type="text" name="correo" class="form-control" value="{{usuario.email}}"/>
-                    <label class="form-label" >Correo</label>
-                  </div>
-                </div>
-                {% if user.perfilusuario.tipo_usuario == 'A' %}
-                    <div class="col-md-6">
-                    <div class="form-outline">
-                        <input type="number" name="credito" class="form-control" value="{{usuario.perfilusuario.creditos}}"/>
-                        <label class="form-label">Credito</label>
-                    </div>
-                    </div>
-                {% endif %}
-
-              </div>
+              {{form|crispy}}                        
 
               <button type="submit" class="btn btn-success btn-lg mb-1">Editar</button>
 

@@ -2,25 +2,19 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import PerfilUsuario
 from django.contrib.auth.models import User
-from .validators import validar_contrasena
+from .validators import validar_contrasena, validate_email_unique
 
 class LoginForm(forms.Form):
     username = forms.CharField(label='Nombre de usuario', max_length=100)
     password = forms.CharField(label='Contraseña', widget=forms.PasswordInput)
 
 class RegistroUsuarioForm(UserCreationForm):
-    creditos = forms.IntegerField(required=False, initial=0 )
+    creditos = forms.IntegerField(required=False, initial=0)
     password1 = forms.CharField(label='Contraseña', widget=forms.PasswordInput(), validators=[validar_contrasena])
     password2 = forms.CharField(label='Confirmar Contraseña', widget=forms.PasswordInput())
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2', 'first_name','last_name')
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('Este correo electrónico ya está registrado')
-        return email
     
     def save(self, request, tipo_usuario, commit=True):
         user = super().save(commit=False)
@@ -30,6 +24,22 @@ class RegistroUsuarioForm(UserCreationForm):
             perfil_usuario.save()
         return user
 
+class EditarUsuarioForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'username']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['first_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['last_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['email'].widget.attrs.update({'class': 'form-control'})
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        validate_email_unique(email)
+        return email
 
 class perfilForm(UserChangeForm):
     class Meta:

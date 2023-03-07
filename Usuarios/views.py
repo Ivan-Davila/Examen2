@@ -1,22 +1,20 @@
 import re
 from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.views import View
 from Usuarios.models import PerfilUsuario
 from django.contrib import messages
 from validate_email_address import validate_email
 from openpyxl import Workbook
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import pytz
 from django.contrib.auth.decorators import permission_required
-from django.contrib.auth.models import Permission
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import JsonResponse
-from .forms import RegistroUsuarioForm, perfilForm
-from django.views.generic import CreateView
+from .forms import RegistroUsuarioForm, perfilForm, EditarUsuarioForm
 from django.urls import reverse_lazy
-from django.views.generic import ListView
+from django.views.generic import ListView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.utils.decorators import method_decorator
 
@@ -30,7 +28,7 @@ class RegistroUsuarioView(CreateView):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         tipo_usuario = self.request.user.perfilusuario.tipo_usuario
-        if tipo_usuario != 'A' and not self.request.user.is_superuser:
+        if tipo_usuario == 'A' or self.request.user.is_superuser:
             form.fields.pop('creditos')
         return form
 
@@ -59,10 +57,6 @@ class RegistroUsuarioView(CreateView):
         messages.error(self.request, 'Usuario registrado', extra_tags='alert-succes')
         return redirect('lista')
 
-
-
-from .models import User
-
 @method_decorator(permission_required('Usuarios.can_view_users_list', raise_exception=True), name='dispatch')
 class ListarUsuariosView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = User
@@ -77,9 +71,9 @@ class ListarUsuariosView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         queryset = super().get_queryset().select_related('perfilusuario')
         user = self.request.user
         if user.perfilusuario.tipo_usuario == 'A' :
-            queryset = queryset.values('username', 'email', 'first_name', 'last_name', 'perfilusuario__tipo_usuario')
+            queryset = User.objects.select_related('perfilusuario').all()
         elif user.perfilusuario.tipo_usuario == 'D' :
-            queryset = User.objects.select_related('perfilusuario').filter(perfilusuario__registrado_por_id=user.id).values('username', 'email', 'first_name', 'last_name', 'perfilusuario__tipo_usuario')
+            queryset = User.objects.select_related('perfilusuario').filter(perfilusuario__registrado_por_id=user.id)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -109,10 +103,34 @@ class ListarUsuariosView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
         context = self.get_context_data(page_obj=page_obj)
         return self.render_to_response(context)
+    
+
+
+@method_decorator(login_required(login_url='/login/'), name='dispatch')
+@method_decorator(permission_required('Usuarios.can_edit_user', login_url='/'), name='dispatch')
+class EditarUsuarioView(View):
+    def get(self, request, id_usuario):
+        usuario = get_object_or_404(User.objects.select_related('perfilusuario'), id=id_usuario)
+        form = EditarUsuarioForm(instance=usuario)
+        return render(request, 'Usuarios/editar.html', {'form': form, 'usuario': usuario})
+
+    def post(self, request, id_usuario):
+        usuario = get_object_or_404(User.objects.select_related('perfilusuario'), id=id_usuario)
+        form = EditarUsuarioForm(request.POST, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El usuario ha sido actualizado exitosamente.')
+            return redirect('lista')
+        else:
+            messages.error(request, 'Por favor corrija los errores del formulario.', extra_tags='alert-danger')
+            return render(request, 'Usuarios/editar.html', {'form': form, 'usuario': usuario})
+        
+class PerfilUsuarioView():
+    pass
 
 
 
-# Create your views here.  
+# Vistas con funciones.  
 @login_required(login_url='/login/')
 @permission_required('Usuarios.can_view_users_list', login_url='/')   
 def listar(request):
@@ -159,8 +177,6 @@ def editar(request,id_usuario):
             usuario.last_name=request.POST['apellidos']
             usuario.email=request.POST['correo']
             usuario.username=request.POST['username']
-            if request.POST['password']:
-                usuario.password=request.POST['password']
             usuario.save()
         return render(request,'Usuarios/editar.html',{'usuario':usuario})
     else:
@@ -239,7 +255,6 @@ def registro(request):
 
 @login_required(login_url='/login/')
 def user_detail(request):
-    user_profile = PerfilUsuario.objects.get(usuario=request.user)
     form = perfilForm(instance=request.user)
     return render(request, 'Usuarios/perfilForm.html', {'form': form})
 
