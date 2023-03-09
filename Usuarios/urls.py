@@ -17,6 +17,6 @@ urlpatterns=[
     path('registro-form/', RegistroUsuarioView.as_view(), name='registrar'),
     path('lista-form/', ListarUsuariosView.as_view(), name='lista'),
     path('editar-form/<int:id_usuario>', EditarUsuarioView.as_view(),name='editar'),
-    path('perfil-form/', PerfilUsuarioView.as_view(),name='perfil')
+    #path('perfil-form/', PerfilUsuarioView.as_view(),name='perfil')
 
 ]
