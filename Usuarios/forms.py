@@ -41,7 +41,7 @@ class EditarUsuarioForm(forms.ModelForm):
         validate_email_unique(email)
         return email
 
-class perfilForm(UserChangeForm):
+class PerfilForm(UserChangeForm):
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
@@ -59,7 +59,7 @@ class perfilForm(UserChangeForm):
     username = forms.CharField(disabled=True, label='Nombre de usuario')
 
     def __init__(self, *args, **kwargs):
-        super(perfilForm, self).__init__(*args, **kwargs)
+        super(PerfilForm, self).__init__(*args, **kwargs)
         self.fields['creditos'].initial = self.instance.perfilusuario.creditos
         self.fields['username'].initial = self.instance.username
         self.fields['password'].widget = forms.HiddenInput()
